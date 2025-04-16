@@ -72,8 +72,30 @@ public class Personne {
 
     @Override
     public String toString() {
-        return nom + " " + prenom + "\nDate et lieu de Naissance: " + dateNaissance + lieuNaissance + "\nAdresse: "
+        return nom + " " + prenom + "\nDate et lieu de Naissance: " + dateNaissance + " " + lieuNaissance
+                + "\nAdresse: "
                 + adresse + "\nTéléphone: " + telph;
     }
 
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj)
+            return true;
+        if (obj == null || getClass() != obj.getClass())
+            return false;
+        Personne personne = (Personne) obj;
+        return nom.equals(personne.nom) &&
+                prenom.equals(personne.prenom) &&
+                dateNaissance.equals(personne.dateNaissance) &&
+                lieuNaissance.equals(personne.lieuNaissance);
+    }
+
+    @Override
+    public int hashCode() {
+        int result = nom.hashCode();
+        result = 31 * result + prenom.hashCode();
+        result = 31 * result + dateNaissance.hashCode();
+        result = 31 * result + lieuNaissance.hashCode();
+        return result;
+    }
 }

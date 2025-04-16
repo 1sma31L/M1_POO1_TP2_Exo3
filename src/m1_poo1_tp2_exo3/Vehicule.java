@@ -51,7 +51,9 @@ public class Vehicule {
     }
 
     public void setMatricule(String matricule) {
-        this.matricule = matricule;
+        if (matricule != null && !matricule.trim().isEmpty()) {
+            this.matricule = matricule;
+        }
     }
 
     public int getNbrPlace() {
@@ -67,6 +69,21 @@ public class Vehicule {
     @Override
     public String toString() {
         return marque + ", couleur:" + couleur + ", matricule:" + matricule;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj)
+            return true;
+        if (obj == null || getClass() != obj.getClass())
+            return false;
+        Vehicule vehicule = (Vehicule) obj;
+        return matricule != null && matricule.equals(vehicule.matricule);
+    }
+
+    @Override
+    public int hashCode() {
+        return matricule != null ? matricule.hashCode() : 0;
     }
 
 }

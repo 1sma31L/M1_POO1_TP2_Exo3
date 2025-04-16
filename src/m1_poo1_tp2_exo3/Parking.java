@@ -84,12 +84,37 @@ public class Parking {
     }
 
     public void entreeVehicule(Vehicule vehicule, String dateEntree, String heureEntree) {
+        if (vehicule == null) {
+            throw new IllegalArgumentException("Le véhicule ne peut pas être null");
+        }
+        validateDateTime(dateEntree, heureEntree);
+
+        if (vehiculesEntrees.size() - vehiculesSorties.size() >= capacite) {
+            throw new IllegalStateException("Le parking est complet");
+        }
+        for (int i = 0; i < vehiculesEntrees.size(); i++) {
+            if (vehiculesEntrees.get(i).equals(vehicule) &&
+                    (i >= vehiculesSorties.size() || !vehicule.equals(vehiculesSorties.get(i)))) {
+                throw new IllegalStateException("Ce véhicule est déjà dans le parking");
+            }
+        }
         this.vehiculesEntrees.add(vehicule);
         this.datesEntrees.add(dateEntree);
         this.heuresEntrees.add(heureEntree);
     }
 
     public void sortieVehicule(Vehicule vehicule, String dateSortie, String heureSortie, int aPayer) {
+        boolean found = false;
+        for (int i = 0; i < vehiculesEntrees.size(); i++) {
+            if (vehiculesEntrees.get(i).equals(vehicule) &&
+                    (i >= vehiculesSorties.size() || !vehicule.equals(vehiculesSorties.get(i)))) {
+                found = true;
+                break;
+            }
+        }
+        if (!found) {
+            throw new IllegalStateException("Ce véhicule n'est pas dans le parking");
+        }
         this.vehiculesSorties.add(vehicule);
         this.datesSorties.add(dateSortie);
         this.heuresSorties.add(heureSortie);
@@ -106,34 +131,60 @@ public class Parking {
 
     private int[] extractHeure(String heure) {
         int[] h = new int[2];// hh:mm
-        h[1] = Integer.valueOf(heure.substring(0, 2));
-        h[0] = Integer.valueOf(heure.substring(3, 5));
+        h[0] = Integer.valueOf(heure.substring(0, 2));
+        h[1] = Integer.valueOf(heure.substring(3, 5));
         return h;
     }
 
     private boolean avant(String date1, String heure1, String date2, String heure2) {
+        if (date1 == null || date2 == null || heure1 == null || heure2 == null) {
+            throw new IllegalArgumentException("Les dates et heures ne peuvent pas être nulles");
+        }
         int[] d1 = extractDate(date1);
         int[] d2 = extractDate(date2);
         int[] h1 = extractHeure(heure1);
         int[] h2 = extractHeure(heure2);
-        if (d1[2] < d2[2]) {
-            return true;
-        } else if (d1[2] == d2[2]) {
-            if (d1[1] < d2[1]) {
-                return true;
-            } else if (d1[1] == d2[1]) {
-                if (d1[0] < d2[0]) {
-                    return true;
-                } else if (d1[0] == d2[0]) {
-                    if (h1[1] < h2[1]) {
-                        return true;
-                    } else if (h1[1] == h2[1] && h1[0] < h2[0]) {
-                        return true;
-                    }
-                }
-            }
+
+        if (d1[2] < d2[2])
+            return true; // Année
+        if (d1[2] > d2[2])
+            return false;
+
+        if (d1[1] < d2[1])
+            return true; // Mois
+        if (d1[1] > d2[1])
+            return false;
+
+        if (d1[0] < d2[0])
+            return true; // Jour
+        if (d1[0] > d2[0])
+            return false;
+
+        if (h1[0] < h2[0])
+            return true; // Heure
+        if (h1[0] > h2[0])
+            return false;
+
+        return h1[1] < h2[1]; // Minutes
+    }
+
+    private void validateDateTime(String date, String heure) {
+        if (date == null || heure == null) {
+            throw new IllegalArgumentException("La date et l'heure ne peuvent pas être nulles");
         }
-        return false;
+        try {
+            int[] d = extractDate(date);
+            int[] h = extractHeure(heure);
+
+            if (d[0] < 1 || d[0] > 31 || d[1] < 1 || d[1] > 12 || d[2] < 2000) {
+                throw new IllegalArgumentException("Format de date invalide: " + date);
+            }
+            if (h[0] < 0 || h[0] > 23 || h[1] < 0 || h[1] > 59) {
+                throw new IllegalArgumentException("Format d'heure invalide: " + heure);
+            }
+        } catch (IndexOutOfBoundsException | NumberFormatException e) {
+            throw new IllegalArgumentException("Format de date/heure invalide");
+        }
     }
 
     public String etatComplet() {
@@ -172,27 +223,31 @@ public class Parking {
     }
 
     public String etatActuel(String dateActuel) {
-        String str = "Etat actuel du parking : ";
-        ArrayList<Integer> indEntree = new ArrayList(), indSortie = new ArrayList();
-        for (int i = 0; i < this.vehiculesEntrees.size(); i++) {
-            indEntree.add(i);
-            for (int j = 0; j < this.vehiculesSorties.size(); j++) {
-                if (this.vehiculesEntrees.get(i).equals(this.vehiculesSorties.get(j))) {
-                    if (!indSortie.contains(j)) {
-                        indSortie.add(j);
+        String str = "Etat actuel du parking : \n";
+        int vehiculesPresents = 0;
+
+        for (int i = 0; i < vehiculesEntrees.size(); i++) {
+            boolean estSorti = false;
+            if (avant(datesEntrees.get(i), heuresEntrees.get(i), dateActuel, "23:59")) {
+                for (int j = 0; j < vehiculesSorties.size(); j++) {
+                    if (vehiculesEntrees.get(i).equals(vehiculesSorties.get(j)) &&
+                            avant(datesEntrees.get(i), heuresEntrees.get(i), datesSorties.get(j), heuresSorties.get(j))
+                            &&
+                            !avant(dateActuel, "00:00", datesSorties.get(j), heuresSorties.get(j))) {
+                        estSorti = true;
                         break;
                     }
                 }
-            }
-            if (indEntree.size() != indSortie.size()) {
-                indSortie.add(-1);
-            }
-        }
-        for (int i = 0; i < this.vehiculesEntrees.size(); i++) {
-            if (indSortie.get(i) == -1) {
-                str += this.vehiculesEntrees.get(i);
+                if (!estSorti) {
+                    str += "- " + vehiculesEntrees.get(i).toString() + "\n";
+                    vehiculesPresents++;
+                }
             }
         }
+        if (vehiculesPresents == 0) {
+            str += "Aucun véhicule présent\n";
+        }
+        str += "Nombre de places disponibles: " + (capacite - vehiculesPresents) + "\n";
         return str;
     }
 
