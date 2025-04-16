@@ -12,7 +12,8 @@ package m1_poo1_tp2_exo3;
 public class Personne {
     protected String nom, prenom, dateNaissance, lieuNaissance, adresse, telph;
 
-    public Personne(String nom, String prenom, String dateNaissance, String lieuNaissance, String adresse, String telph) {
+    public Personne(String nom, String prenom, String dateNaissance, String lieuNaissance, String adresse,
+            String telph) {
         this.nom = nom;
         this.prenom = prenom;
         this.dateNaissance = dateNaissance;
@@ -71,8 +72,8 @@ public class Personne {
 
     @Override
     public String toString() {
-        return nom + " " + prenom + "\nDate et lieu de Naissance: " + dateNaissance + lieuNaissance + "\nAdresse: " + adresse + "\nTéléphone: " + telph;
+        return nom + " " + prenom + "\nDate et lieu de Naissance: " + dateNaissance + lieuNaissance + "\nAdresse: "
+                + adresse + "\nTéléphone: " + telph;
     }
-    
-    
+
 }

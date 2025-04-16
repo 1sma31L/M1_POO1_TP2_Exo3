@@ -59,14 +59,14 @@ public class Vehicule {
     }
 
     public void setNbrPlace(int nbrPlace) {
-        if(nbrPlace >= 2){
+        if (nbrPlace >= 2) {
             this.nbrPlace = nbrPlace;
-        }        
+        }
     }
 
     @Override
     public String toString() {
         return marque + ", couleur:" + couleur + ", matricule:" + matricule;
-    }   
-    
+    }
+
 }
