@@ -15,7 +15,6 @@ public class M1_POO1_TP2_Exo3 {
      * @param args the command line arguments
      */
     public static void main(String[] args) {
-        // TODO code application logic here
         Personne p1 = new Personne("Badr", "Amine", "11/11/1990", "Alger Centre", "Bab Ezzouar, Alger", "0555555555");
         Personne p2 = new Personne("Gali", "Mohamed", "16/01/1994", "Blida", "Dergana, Alger", "0777777777");
         Vehicule v1 = new Vehicule(p1, "Toyota", "Noir", "05263812316", 5);

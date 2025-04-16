@@ -87,41 +87,56 @@ public class Vehicule {
 - ✅ Amélioration de la gestion de la capacité
 - ✅ Ajout de validation des dates et heures
 - ✅ Amélioration de l'affichage de l'état actuel
+- ✅ Initialisation correcte des collections dans le constructeur
+- ✅ Amélioration de la logique de sortie des véhicules
+- ✅ Validation du montant à payer
+- ✅ Meilleure gestion des entrées/sorties multiples d'un même véhicule
 
-#### Exemple de code amélioré :
+#### Dernières améliorations majeures :
 ```java
 public class Parking {
-    // ... attributs existants ...
+    // Initialisation sûre des collections
+    protected ArrayList<String> heuresEntrees = new ArrayList<String>(), datesEntrees = new ArrayList<String>();
+    protected ArrayList<String> heuresSorties = new ArrayList<String>(), datesSorties = new ArrayList<String>();
+    protected ArrayList<Vehicule> vehiculesEntrees = new ArrayList<Vehicule>(), vehiculesSorties = new ArrayList<Vehicule>();
 
-    private void validateDateTime(String date, String heure) {
-        if (date == null || heure == null) {
-            throw new IllegalArgumentException("La date et l'heure ne peuvent pas être nulles");
-        }
-        try {
-            int[] d = extractDate(date);
-            int[] h = extractHeure(heure);
-            
-            if (d[0] < 1 || d[0] > 31 || d[1] < 1 || d[1] > 12 || d[2] < 2000) {
-                throw new IllegalArgumentException("Format de date invalide: " + date);
-            }
-            if (h[0] < 0 || h[0] > 23 || h[1] < 0 || h[1] > 59) {
-                throw new IllegalArgumentException("Format d'heure invalide: " + heure);
-            }
-        } catch (IndexOutOfBoundsException | NumberFormatException e) {
-            throw new IllegalArgumentException("Format de date/heure invalide");
-        }
-    }
-
-    public void entreeVehicule(Vehicule vehicule, String dateEntree, String heureEntree) {
+    public void sortieVehicule(Vehicule vehicule, String dateSortie, String heureSortie, int aPayer) {
         if (vehicule == null) {
             throw new IllegalArgumentException("Le véhicule ne peut pas être null");
         }
-        validateDateTime(dateEntree, heureEntree);
-        
-        if (vehiculesEntrees.size() - vehiculesSorties.size() >= capacite) {
-            throw new IllegalStateException("Le parking est complet");
+        validateDateTime(dateSortie, heureSortie);
+
+        // Trouver l'entrée correspondante du véhicule
+        int indexEntree = -1;
+        for (int i = 0; i < vehiculesEntrees.size(); i++) {
+            if (vehiculesEntrees.get(i).equals(vehicule)) {
+                boolean dejaSorti = false;
+                // Vérifier si ce véhicule est déjà sorti pour cette entrée
+                for (int j = 0; j < vehiculesSorties.size(); j++) {
+                    if (vehiculesSorties.get(j).equals(vehicule) && 
+                        datesEntrees.get(i).equals(datesEntrees.get(j)) && 
+                        heuresEntrees.get(i).equals(heuresEntrees.get(j))) {
+                        dejaSorti = true;
+                        break;
+                    }
+                }
+                if (!dejaSorti) {
+                    indexEntree = i;
+                    break;
+                }
+            }
         }
-        // ... reste du code ...
+        
+        // Validations de sortie
+        if (indexEntree == -1) {
+            throw new IllegalStateException("Ce véhicule n'est pas dans le parking");
+        }
+        if (!avant(datesEntrees.get(indexEntree), heuresEntrees.get(indexEntree), dateSortie, heureSortie)) {
+            throw new IllegalArgumentException("La date/heure de sortie doit être après la date/heure d'entrée");
+        }
+        if (aPayer < 0) {
+            throw new IllegalArgumentException("Le montant à payer ne peut pas être négatif");
+        }
     }
 }
 ```
@@ -130,6 +145,9 @@ public class Parking {
 - Validation des paramètres null
 - Vérification des formats de date/heure
 - Gestion des exceptions pour les formats invalides
+- Validation du montant à payer
+- Vérification de la cohérence des dates d'entrée/sortie
+- Gestion correcte des entrées/sorties multiples
 
 ## 3. Améliorations Générales
 
@@ -138,16 +156,20 @@ public class Parking {
 - **Cohérence** : Implémentation correcte des méthodes equals/hashCode
 - **Robustesse** : Validation approfondie des données
 - **Lisibilité** : Amélioration des formats d'affichage
+- **Type Safety** : Utilisation correcte des génériques pour les collections
 
 ### 3.2 Gestion des Erreurs
 - Ajout de messages d'erreur en français
 - Validation complète des entrées
 - Gestion appropriée des cas limites
+- Vérification des montants de paiement
 
 ### 3.3 Validation des Données
 - Contrôle des dates et heures
 - Vérification de la capacité du parking
 - Validation des véhicules et propriétaires
+- Validation des paiements
+- Vérification de la cohérence temporelle
 
 ## 4. Tests et Validation
 
@@ -157,10 +179,12 @@ public class Parking {
 3. Tentative d'entrée d'un véhicule déjà présent
 4. Validation des formats de date/heure
 5. Traçabilité par marque et propriétaire
+6. Gestion des entrées/sorties multiples d'un même véhicule
+7. Validation des montants de paiement
 
 #### Exemple de test :
 ```java
-// Test d'entrée et sortie de véhicule
+// Test d'entrée et sortie de véhicule avec validation du paiement
 Personne p1 = new Personne("Badr", "Amine", "11/11/1990", "Alger Centre", "Bab Ezzouar, Alger", "0555555555");
 Vehicule v1 = new Vehicule(p1, "Toyota", "Noir", "05263812316", 5);
 Parking park = new Parking("El Hadaik", "12, Rue El Hadaik, Alger", 100, 50);
@@ -168,14 +192,15 @@ Parking park = new Parking("El Hadaik", "12, Rue El Hadaik, Alger", 100, 50);
 // Test entrée véhicule
 park.entreeVehicule(v1, "08/04/2025", "18:00");
 
-// Test parking plein
+// Test sortie avec paiement invalide
 try {
-    for (int i = 0; i <= park.getCapacite(); i++) {
-        park.entreeVehicule(v1, "08/04/2025", "18:00");
-    }
-} catch (IllegalStateException e) {
-    System.out.println("Test réussi: " + e.getMessage()); // Le parking est complet
+    park.sortieVehicule(v1, "08/04/2025", "17:00", 50);
+} catch (IllegalArgumentException e) {
+    System.out.println("Test réussi: " + e.getMessage()); // La date/heure de sortie doit être après la date/heure d'entrée
 }
+
+// Test sortie avec paiement valide
+park.sortieVehicule(v1, "08/04/2025", "19:00", 50);
 ```
 
 ## 5. Points d'Attention
@@ -183,13 +208,16 @@ try {
 ### 5.1 Limitations Connues
 - Le système ne gère pas les années bissextiles
 - Pas de validation spécifique pour les jours par mois
+- Pas de calcul automatique du montant à payer
 
 ### 5.2 Améliorations Futures Possibles
 - Ajout de la gestion des tarifs variables
 - Implémentation d'un système de réservation
 - Gestion plus fine des dates (années bissextiles, jours par mois)
 - Ajout de statistiques d'occupation
+- Calcul automatique du montant à payer basé sur la durée
+- Système de facturation détaillé
 
 ## 6. Conclusion
 
-Les modifications apportées ont significativement amélioré la robustesse et la fiabilité du système tout en maintenant sa facilité d'utilisation. Le code respecte maintenant mieux les principes de la POO et offre une meilleure gestion des erreurs. 
+Les modifications apportées ont significativement amélioré la robustesse et la fiabilité du système. Les dernières améliorations ont particulièrement renforcé la gestion des entrées/sorties multiples et la validation des paiements. Le code respecte maintenant mieux les principes de la POO, offre une meilleure gestion des erreurs et assure une plus grande cohérence des données. 

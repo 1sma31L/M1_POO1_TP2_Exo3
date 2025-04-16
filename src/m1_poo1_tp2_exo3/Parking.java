@@ -14,9 +14,10 @@ import java.util.ArrayList;
 public class Parking {
     protected String nom, adresse;
     protected int capacite, tarif;
-    protected ArrayList<String> heuresEntrees = new ArrayList(), datesEntrees = new ArrayList();
-    protected ArrayList<String> heuresSorties = new ArrayList(), datesSorties = new ArrayList();
-    protected ArrayList<Vehicule> vehiculesEntrees = new ArrayList(), vehiculesSorties = new ArrayList();
+    protected ArrayList<String> heuresEntrees = new ArrayList<String>(), datesEntrees = new ArrayList<String>();
+    protected ArrayList<String> heuresSorties = new ArrayList<String>(), datesSorties = new ArrayList<String>();
+    protected ArrayList<Vehicule> vehiculesEntrees = new ArrayList<Vehicule>(),
+            vehiculesSorties = new ArrayList<Vehicule>();
     protected int totalAccumule;
 
     public Parking(String nom, String adresse, int capacite, int tarif) {
@@ -92,29 +93,69 @@ public class Parking {
         if (vehiculesEntrees.size() - vehiculesSorties.size() >= capacite) {
             throw new IllegalStateException("Le parking est complet");
         }
-        for (int i = 0; i < vehiculesEntrees.size(); i++) {
-            if (vehiculesEntrees.get(i).equals(vehicule) &&
-                    (i >= vehiculesSorties.size() || !vehicule.equals(vehiculesSorties.get(i)))) {
-                throw new IllegalStateException("Ce véhicule est déjà dans le parking");
-            }
+
+        // Vérifier si le véhicule est déjà dans le parking
+        int entreesCount = 0;
+        int sortiesCount = 0;
+        for (Vehicule v : vehiculesEntrees) {
+            if (v.equals(vehicule))
+                entreesCount++;
         }
+        for (Vehicule v : vehiculesSorties) {
+            if (v.equals(vehicule))
+                sortiesCount++;
+        }
+
+        if (entreesCount > sortiesCount) {
+            throw new IllegalStateException("Ce véhicule est déjà dans le parking");
+        }
+
         this.vehiculesEntrees.add(vehicule);
         this.datesEntrees.add(dateEntree);
         this.heuresEntrees.add(heureEntree);
     }
 
     public void sortieVehicule(Vehicule vehicule, String dateSortie, String heureSortie, int aPayer) {
-        boolean found = false;
+        if (vehicule == null) {
+            throw new IllegalArgumentException("Le véhicule ne peut pas être null");
+        }
+        validateDateTime(dateSortie, heureSortie);
+
+        // Trouver l'entrée correspondante du véhicule
+        int indexEntree = -1;
         for (int i = 0; i < vehiculesEntrees.size(); i++) {
-            if (vehiculesEntrees.get(i).equals(vehicule) &&
-                    (i >= vehiculesSorties.size() || !vehicule.equals(vehiculesSorties.get(i)))) {
-                found = true;
-                break;
+            if (vehiculesEntrees.get(i).equals(vehicule)) {
+                boolean dejaSorti = false;
+                // Vérifier si ce véhicule est déjà sorti pour cette entrée
+                for (int j = 0; j < vehiculesSorties.size(); j++) {
+                    if (vehiculesSorties.get(j).equals(vehicule) &&
+                            datesEntrees.get(i).equals(datesEntrees.get(j)) &&
+                            heuresEntrees.get(i).equals(heuresEntrees.get(j))) {
+                        dejaSorti = true;
+                        break;
+                    }
+                }
+                if (!dejaSorti) {
+                    indexEntree = i;
+                    break;
+                }
             }
         }
-        if (!found) {
+
+        if (indexEntree == -1) {
             throw new IllegalStateException("Ce véhicule n'est pas dans le parking");
         }
+
+        // Vérifier que la date/heure de sortie est après la date/heure d'entrée
+        if (!avant(datesEntrees.get(indexEntree), heuresEntrees.get(indexEntree), dateSortie, heureSortie)) {
+            throw new IllegalArgumentException("La date/heure de sortie doit être après la date/heure d'entrée");
+        }
+
+        // Vérifier que le montant à payer est positif
+        if (aPayer < 0) {
+            throw new IllegalArgumentException("Le montant à payer ne peut pas être négatif");
+        }
+
         this.vehiculesSorties.add(vehicule);
         this.datesSorties.add(dateSortie);
         this.heuresSorties.add(heureSortie);
